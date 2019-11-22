@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>飞机大战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #backgImg {
+            width: 320px;
+            height: 568px;
+            margin: 0 auto;
+            background: url('./images/bg.png');
+        }
+
+        #flyEle {
+            width: 34px;
+            height: 24px;
+            position: absolute;
+            background: url('./images/me.png');
+        }
+    </style>
+</head>
+
+<body>
+    <div id='backgImg'>
+        <div id='flyEle'></div>
+    </div>
+</body>
+<script>
+    //获取背景和飞机元素
+    var backgImg = document.getElementById('backgImg');
+    var flyEle = document.getElementById('flyEle');
+    //设置飞机的初始位置
+    flyEle.style.top = backgImg.offsetHeight - flyEle.offsetHeight + 'px';
+    flyEle.style.left = backgImg.offsetLeft + backgImg.offsetWidth / 2 - flyEle.offsetWidth / 2 + 'px';
+    //设置飞机随着鼠标移动
+    backgImg.onmousemove = function (e) {
+        var flyEleX = e.clientX - flyEle.offsetWidth / 2;
+        var flyEleY = e.clientY - flyEle.offsetHeight / 2;
+        flyEleX = flyEleX < backgImg.offsetLeft ? backgImg.offsetLeft : flyEleX;
+        flyEleX = flyEleX > backgImg.offsetLeft + backgImg.offsetWidth - flyEle.offsetWidth ? backgImg.offsetLeft + backgImg.offsetWidth - flyEle.offsetWidth : flyEleX;
+        flyEleY = flyEleY < backgImg.offsetTop ? backgImg.offsetTop : flyEleY;
+        flyEleY = flyEleY > backgImg.offsetTop + backgImg.offsetHeight - flyEle.offsetHeight ? backgImg.offsetTop + backgImg.offsetHeight - flyEle.offsetHeight : flyEleY;
+        flyEle.style.left = flyEleX + 'px';
+        flyEle.style.top = flyEleY + 'px';
+    }
+    //当飞机开始移动后开启开火模式
+    backgImg.onmouseover = function () {
+        createBullet();
+        beginBullet();
+        createFoe();
+        beginFoe();
+        backgImg.onmouseover = null;
+    }
+    //子弹变量，width是子弹的宽度，height是子弹的高度，path是子弹的图片，arr作为存储子弹的信息，数组每个值存储子弹的 ID/Top/Left
+    var Bullet = {
+        name: 'Bullet',
+        num: 0,
+        width: 6,
+        height: 14,
+        path: 'url("./images/b.png")',
+        arr: []
+    };
+    //创建子弹函数
+    function createBullet() {
+        var bull;
+        var arrlength;
+        setInterval(function () {
+            bull = document.createElement('div');
+            arrlength = Bullet.arr.length;
+            backgImg.appendChild(bull);
+            bull.style.width = Bullet.width + 'px';
+            bull.style.height = Bullet.height + 'px';
+            bull.style.background = Bullet.path;
+            bull.style.position = 'absolute';
+            bull.style.top = flyEle.offsetTop + 'px';
+            bull.style.left = flyEle.offsetLeft + flyEle.offsetWidth / 2 - bull.offsetWidth / 2 + 'px';
+            bull.id = Bullet.name + Bullet.num;
+            Bullet.arr[arrlength] = bull.id + '|';
+            Bullet.arr[arrlength] += flyEle.offsetTop + '|';
+            Bullet.arr[arrlength] += (flyEle.offsetLeft + flyEle.offsetWidth / 2 - bull.offsetWidth / 2);
+            Bullet.num++;
+        }, 50)
+    }
+    //子弹发射
+    function beginBullet() {
+        //bullArr用于接收Bullet的arr属性，arr数组包含了子弹的ID/Top/Left,bullTop是子弹的Top值
+        var i;
+        var j;
+        var bullArr;
+        var bull;
+        var bullTop;
+        var bullLeft;
+        var foeArr;
+        var foe;
+        var foeTop;
+        var foeLeft;
+        var xCheck;
+        var yCheck;
+        setInterval(function () {
+            for (i = 0; i < Bullet.arr.length; i++) {
+                bullArr = Bullet.arr[i].split('|');
+                bull = document.getElementById(bullArr[0]);
+                bullTop = parseInt(bullArr[1]) - 4;
+                bullLeft = parseInt(bullArr[2]);
+                if (bullTop > 0) {
+                    bull.style.top = bullTop + 'px';
+                    Bullet.arr[i] = bullArr[0] + '|' + bullTop + '|' + bullLeft;
+                    //判断子弹上升时有没有和敌机相撞
+                    for (j = 0; j < Foe.arr.length; j++) {
+                        foeArr = Foe.arr[j].split('|');
+                        foe = document.getElementById(foeArr[0]);
+                        foeTop = parseInt(foeArr[1]);
+                        foeLeft = parseInt(foeArr[2]);
+                        xCheck = bullLeft > foeLeft - Bullet.width && bullLeft < foeLeft + Foe.width;
+                        yCheck = bullTop > foeTop - Bullet.height && bullTop < foeTop + Foe.height;
+                        //如果子弹和敌机相撞
+                        if (xCheck && yCheck) {
+                            //删除敌机
+                            backgImg.removeChild(foe);
+                            Foe.arr.splice(j, 1);
+                            //删除子弹
+                            backgImg.removeChild(bull);
+                            Bullet.arr.splice(i, 1);
+                        }
+                    }
+                } else {
+                    backgImg.removeChild(bull);
+                    Bullet.arr.splice(i, 1);
+                }
+            }
+        }, 5)
+    }
+
+    //敌机变量，width是敌机的宽度，height是敌机的高度，path是敌机的图片，arr作为存储敌机的信息，数组每个值存储敌机的 ID/Top/Left
+
+    var Foe = {
+        name: 'foe',
+        num: 0,
+        width: 34,
+        height: 24,
+        path: 'url("./images/foe.png")',
+        arr: [] //arr是一个数组，存储的是每一个敌机的ID/Top/Left
+    }
+    function createFoe() {
+        //获取每一个敌机
+        var foe;
+        //获取敌机的个数
+        var foelength;
+        //敌机的ID
+        var forId;
+        //敌机的Left值
+        var foeLeft;
+        setInterval(function () {
+            foe = document.createElement('div');
+            backgImg.appendChild(foe);
+            foe.id = Foe.name + Foe.num;
+            foe.style.width = Foe.width + 'px';
+            foe.style.height = Foe.height + 'px';
+            foe.style.background = Foe.path;
+            foe.style.position = 'absolute';
+            foeLeft = Math.floor(Math.random() * 287);
+            foe.style.top = '0px';
+            foe.style.left = backgImg.offsetLeft + foeLeft + 'px';
+            foelength = Foe.arr.length;
+            Foe.arr[foelength] = foe.id + '|';
+            Foe.arr[foelength] += foe.offsetTop + '|';
+            Foe.arr[foelength] += foe.offsetLeft;
+            Foe.num++;
+        }, 200)
+    }
+    //让敌机运动
+    function beginFoe() {
+        var i;
+        var j;
+        var bullArr;
+        var bull;
+        var bullTop;
+        var bullLeft;
+        var foeArr;
+        var foe;
+        var foeTop;
+        var foeLeft;
+        var xCheck;
+        var yCheck;
+        setInterval(function () {
+            for (i = 0; i < Foe.arr.length; i++) {
+                foeArr = Foe.arr[i].split('|');
+                foe = document.getElementById(foeArr[0]);
+                foeTop = parseInt(foeArr[1]) + 1;
+                foeLeft = parseInt(foeArr[2]);
+                if (foeTop < backgImg.offsetHeight - Foe.height) {
+                    foe.style.top = foeTop + 'px';
+                    Foe.arr[i] = foeArr[0] + '|' + foeTop + '|' + foeArr[2];
+                    //判断敌机下落时有没有和子弹相撞
+                    for (j = 0; j < Bullet.arr.length; j++) {
+                        bullArr = Bullet.arr[j].split('|');
+                        bull = document.getElementById(bullArr[0]);
+                        bullTop = parseInt(bullArr[1]);
+                        bullLeft = parseInt(bullArr[2]);
+                        xCheck = bullLeft > foeLeft - Bullet.width && bullLeft < foeLeft + Foe.width;
+                        yCheck = bullTop > foeTop - Bullet.height && bullTop < foeTop + Foe.height;
+                        //如果子弹和敌机相撞
+                        if (xCheck && yCheck) {
+                            //删除敌机
+                            backgImg.removeChild(foe);
+                            Foe.arr.splice(i, 1);
+                            //删除子弹
+                            backgImg.removeChild(bull);
+                            Bullet.arr.splice(j, 1);
+                        }
+                    }
+                } else {
+                    backgImg.removeChild(foe);
+                    Foe.arr.splice(i, 1);
+                }
+            }
+        }, 10)
+    }
+</script>
+
+</html>
