@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .blockAll {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0%;
+            left: 0%;
+            z-index: 998;
+            -moz-opacity: 0.0;
+            opacity: 0.0;
+            filter: alpha(opacity=0);
+        }
+        
+        .pop {
+            display: none;
+            width: 30%;
+            height: 30%;
+            position: absolute;
+            top: 20%;
+            left: 35%;
+            z-index: 999;
+            background: url('./images/background.png') -6px -3px no-repeat;
+            background-color: rgb(230, 230, 230);
+            -moz-opacity: 1.0;
+            opacity: 1.0;
+            filter: alpha(opacity=100);
+        }
+        
+        .pop div {
+            margin: 80px auto 0;
+            font-size: 60px;
+            color: rgb(255, 136, 136);
+            text-align: center;
+        }
+        
+        .pop #sure {
+            margin: 30px 39.5% 0;
+            width: 90px;
+            height: 60px;
+            background-color: rgb(230, 230, 230);
+        }
+        
+        #game {
+            width: 800px;
+            height: 600px;
+            background-image: url('./images/sky.png');
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #bird {
+            /* width: 34px;
+            height: 24px;
+            width: 37px;
+            height: 30px; */
+            width: 41px;
+            height: 32px;
+            position: absolute;
+            background: url('./images/beicheng.png') -8px -4px;
+            left: 100px;
+            top: 100px;
+        }
+        
+        #showscore {
+            width: 80px;
+            height: 40px;
+            line-height: 40px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            color: red;
+            font-size: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='game'>
+        <div id='bird'>
+        </div>
+        <div id='showscore'>0</div>
+    </div>
+    <div class='blockAll'></div>
+    <div class='pop'>
+        <div>分数:2000分</div>
+        <input id='sure' type='button' value='确定'>
+    </div>
+    <script>
+        //获取背景和小鸟元素
+        var game = document.getElementById('game');
+        var birdEle = document.getElementById('bird');
+        var skyX = 0;
+        var surebg = 0;
+        var bird = {
+            speedX: 5,
+            speedY: 0,
+            x: birdEle.offsetLeft,
+            y: birdEle.offsetTop
+        }
+        var running = true;
+        var showscore = document.getElementById('showscore');
+        document.onclick = function() {
+                setInterval(function() {
+                        if (running) {
+                            //让背景动起来
+                            skyX -= 5;
+                            game.style.backgroundPositionX = skyX + 'px';
+                            showscore.innerText = parseInt(-skyX / 100);
+                            //让小鸟自由落体
+                            bird.speedY += 1;
+                            bird.y += bird.speedY;
+                            if (bird.y < 0) {
+                                bird.y = 0;
+                                running = false;
+                                end();
+                            } else if (bird.y > game.offsetHeight - birdEle.offsetHeight) {
+                                bird.y = game.offsetHeight - birdEle.offsetHeight;
+                                running = false;
+                                end();
+                            }
+                            birdEle.style.top = bird.y + 'px';
+                        }
+                    }, 30)
+                    //点击文档的时候实现小鸟向上运动
+                document.onclick = function() {
+                        if (running) {
+                            bird.speedY = -10;
+                        }
+                    }
+                    //创建管道
+                function createPipe(position) {
+                    var pipe = {};
+                    pipe.x = position;
+                    pipe.uHeight = parseInt(Math.random() * 401);
+                    pipe.dHeight = 600 - pipe.uHeight - 200;
+                    pipe.dTop = pipe.uHeight + 200;
+                    //创建上管道
+                    var uPipe = document.createElement('div');
+                    uPipe.style.width = '52px';
+                    uPipe.style.height = pipe.uHeight + 'px';
+                    uPipe.style.background = 'url("./images/pipe2.png") no-repeat center bottom';
+                    uPipe.style.position = 'absolute';
+                    uPipe.style.top = '0px';
+                    uPipe.style.left = pipe.x + 'px';
+                    game.appendChild(uPipe);
+                    //创建下管道
+                    var dPipe = document.createElement('div');
+                    dPipe.style.width = '52px';
+                    dPipe.style.height = pipe.dHeight + 'px';
+                    dPipe.style.background = 'url("./images/pipe1.png") no-repeat center  top';
+                    dPipe.style.position = 'absolute';
+                    dPipe.style.top = pipe.dTop + 'px';
+                    dPipe.style.left = pipe.x + 'px';
+                    game.appendChild(dPipe);
+                    //让管道动起来
+                    var uCheck;
+                    var dCheck;
+                    setInterval(function() {
+                        if (running) {
+                            pipe.x -= 2;
+                            uPipe.style.left = pipe.x + 'px';
+                            dPipe.style.left = pipe.x + 'px';
+                            //判断是否撞到了上管道或者下管道
+                            uCheck = bird.x + 34 > pipe.x && bird.x < pipe.x + 52 && bird.y < uPipe.offsetHeight;
+                            dCheck = bird.x + 34 > pipe.x && bird.x < pipe.x + 52 && bird.y > uPipe.offsetHeight + 200;
+                            if (uCheck || dCheck) {
+                                running = false;
+                                end();
+                            }
+                            if (uPipe.offsetLeft < -50) {
+                                //计算新上下管道的高度和位置
+                                pipe.uHeight = parseInt(Math.random() * 401);
+                                pipe.dHeight = 600 - pipe.uHeight - 200;
+                                pipe.dTop = pipe.uHeight + 200;
+                                //重新设置上下管道的高度和位置
+                                uPipe.style.height = pipe.uHeight + 'px';
+                                dPipe.style.height = pipe.dHeight + 'px';
+                                dPipe.style.top = pipe.dTop + 'px';
+                                pipe.x = 800;
+                            }
+                        }
+                    }, 30)
+                }
+                //创建4个管道
+                createPipe(400);
+                createPipe(600);
+                createPipe(800);
+                createPipe(1000);
+            }
+            //死亡时弹出游戏窗口
+        function end() {
+            var pop = document.getElementsByClassName('pop')[0];
+            document.getElementsByClassName('blockAll')[0].style.display = 'block';
+            pop.style.display = 'block';
+            var popWidth = pop.offsetWidth;
+            var score = pop.children[0];
+            score.innerHTML = '分数:' + parseInt((-skyX / 100));
+            setInterval(function() {
+                //结束界面背景滚动
+                surebg += 3;
+                if (surebg < popWidth) {
+                    pop.style.backgroundPositionX = surebg + 'px';
+                } else {
+                    surebg = 0;
+                }
+            }, 30)
+        }
+        //点击确定按钮刷新页面重新游戏
+        document.getElementById('sure').onclick = function() {
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>
